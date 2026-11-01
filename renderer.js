@@ -1,37 +1,92 @@
 const MIN = 60_000;
 const INTERVAL = 30 * MIN;
 const SNOOZE = 5 * MIN;
+const FRAME_MS = 100;
 
-const TIPS = [
-  'Brazos arriba, manos entrelazadas y estirate hacia el techo. Sostené 15 segundos.',
-  'Bajá los hombros lejos de las orejas y hacé 5 círculos hacia atrás.',
-  'Oreja al hombro, despacio. 15 segundos de cada lado.',
-  'Mentón hacia atrás, como haciendo papada. 5 repeticiones.',
-  'Manos detrás de la cabeza, abrí los codos y llevá el pecho hacia adelante.',
-  'Parate, caminá un minuto y mirá algo lejos para descansar la vista.',
-  'Sentada, girá el torso hacia un lado tomándote del respaldo. Después al otro.',
+// Hojas de cuadros sacadas de los GIF. La de tipear está más cerca de cámara,
+// por eso se achica más para que las tres tengan el mismo tamaño de persona.
+const SHEETS = {
+  typing: { w: 346, h: 332, cols: 6, count: 30, scale: 0.576 },
+  stretch: { w: 193, h: 358, cols: 6, count: 30, scale: 0.8 },
+  neck: { w: 104, h: 313, cols: 6, count: 30, scale: 0.8 },
+};
+
+// Se alternan en cada recordatorio. loopFrom: desde qué cuadro repite mientras espera.
+const EXERCISES = [
+  {
+    sprite: 'stretch', loopFrom: 14, tips: [
+      'Brazos arriba, manos entrelazadas y estirate hacia el techo. Sostené 15 segundos.',
+      'Parate, estirá los brazos bien arriba y respirá hondo tres veces.',
+      'Brazos arriba y llevá el torso suave hacia un lado y después al otro.',
+    ],
+  },
+  {
+    sprite: 'neck', loopFrom: 0, tips: [
+      'Oreja al hombro, despacio. 15 segundos de cada lado.',
+      'Bajá los hombros lejos de las orejas e inclina la cabeza de lado a lado.',
+      'Mentón hacia atrás, como haciendo papada, y después inclinaciones suaves.',
+    ],
+  },
 ];
 
 const scene = document.getElementById('scene');
-const poses = document.querySelectorAll('.pose');
 const bubble = document.getElementById('bubble');
 const tip = document.getElementById('tip');
 const hint = document.getElementById('hint');
+const sprites = {};
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-let nextAt = 0, reminding = false, tipIndex = 0, dragging = false;
+for (const [name, s] of Object.entries(SHEETS)) {
+  const el = document.getElementById(name);
+  el.style.width = `${s.w * s.scale}px`;
+  el.style.height = `${s.h * s.scale}px`;
+  el.style.backgroundSize = `${s.cols * s.w * s.scale}px auto`;
+  sprites[name] = el;
+}
+
+let anim = { sprite: 'typing', frame: 0, dir: 1, loopFrom: 0 };
+
+function play(sprite, loopFrom = 0) {
+  anim = { sprite, frame: 0, dir: 1, loopFrom };
+  for (const [name, el] of Object.entries(sprites)) el.classList.toggle('active', name === sprite);
+  draw();
+}
+
+function draw() {
+  const s = SHEETS[anim.sprite];
+  const i = reduced ? (anim.sprite === 'typing' ? 0 : s.count - 1) : anim.frame;
+  sprites[anim.sprite].style.backgroundPosition =
+    `-${(i % s.cols) * s.w * s.scale}px -${Math.floor(i / s.cols) * s.h * s.scale}px`;
+}
+
+// Ida y vuelta para que el loop no salte del último cuadro al primero
+setInterval(() => {
+  const n = SHEETS[anim.sprite].count;
+  let f = anim.frame + anim.dir;
+  if (f >= n) { anim.dir = -1; f = n - 2; }
+  else if (f < anim.loopFrom) { anim.dir = 1; f = anim.loopFrom + 1; }
+  anim.frame = f;
+  draw();
+}, FRAME_MS);
+
+let nextAt = 0, reminding = false, round = 0, dragging = false;
 
 function schedule(ms) {
   nextAt = Date.now() + ms;
   reminding = false;
   scene.classList.remove('stretch');
+  play('typing');
   api.setNext(nextAt);
 }
 
 function remind() {
   if (reminding) return;
   reminding = true;
-  tip.textContent = TIPS[tipIndex++ % TIPS.length];
+  const ex = EXERCISES[round % EXERCISES.length];
+  tip.textContent = ex.tips[Math.floor(round / EXERCISES.length) % ex.tips.length];
+  round++;
   scene.classList.add('stretch');
+  play(ex.sprite, ex.loopFrom);
   api.setNext(null);
 }
 
@@ -58,7 +113,7 @@ api.on('stretch-now', remind);
 api.on('idle', () => { if (!reminding) schedule(INTERVAL); });
 
 // Solo el personaje y el globito capturan el mouse; el resto deja pasar clicks
-for (const el of [...poses, bubble]) {
+for (const el of [...Object.values(sprites), bubble]) {
   el.addEventListener('mouseenter', () => {
     api.setIgnore(false);
     if (el !== bubble) scene.classList.add('hover');
@@ -69,14 +124,14 @@ for (const el of [...poses, bubble]) {
   });
 }
 
-for (const pose of poses) {
-  pose.addEventListener('pointerdown', (e) => {
+for (const el of Object.values(sprites)) {
+  el.addEventListener('pointerdown', (e) => {
     dragging = true;
-    pose.setPointerCapture(e.pointerId);
+    el.setPointerCapture(e.pointerId);
     api.dragStart();
   });
-  pose.addEventListener('pointermove', () => { if (dragging) api.dragMove(); });
-  pose.addEventListener('pointerup', () => { dragging = false; api.dragEnd(); });
+  el.addEventListener('pointermove', () => { if (dragging) api.dragMove(); });
+  el.addEventListener('pointerup', () => { dragging = false; api.dragEnd(); });
 }
 
 schedule(INTERVAL);

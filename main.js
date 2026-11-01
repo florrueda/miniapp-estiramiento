@@ -2,7 +2,7 @@ const { app, BrowserWindow, Tray, Menu, ipcMain, screen, nativeImage, powerMonit
 const path = require('path');
 const fs = require('fs');
 
-const W = 400, H = 330;
+const W = 440, H = 330;
 const IDLE_SECONDS = 300; // 5 min sin usar la PC cuenta como pausa
 let win, tray, nextAt = null, drag = null;
 

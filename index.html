@@ -20,33 +20,18 @@
   html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; user-select: none; }
   body { font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); }
 
-  /* Mismas proporciones para las dos poses (escala 0.38 del dibujo original) */
-  .pose {
-    position: absolute; bottom: 4px; cursor: grab; touch-action: none;
-    transform-origin: 50% 100%;
-    transition: opacity .35s ease, transform .6s var(--spring);
+  /* Sprites de los GIF; tamaño y cuadro los pone renderer.js */
+  .sprite {
+    position: absolute; background-repeat: no-repeat; cursor: grab; touch-action: none;
+    opacity: 0; pointer-events: none; transition: opacity .35s ease;
   }
-  .pose:active { cursor: grabbing; }
-  #sitting { right: 10px; width: 130px; height: 179px; animation: breathe 3.6s ease-in-out infinite; }
-  #stretching {
-    right: 14px; width: 77px; height: 320px;
-    opacity: 0; transform: translateY(14px) scaleY(.92); pointer-events: none;
-  }
-  @keyframes breathe { 50% { transform: scaleY(1.008); } }
+  .sprite:active { cursor: grabbing; }
+  .sprite.active { opacity: 1; pointer-events: auto; }
+  #typing { right: 8px; bottom: 4px; background-image: url(assets/typing.png); }
+  #stretch { left: 214px; top: 44px; background-image: url(assets/stretch.png); }
+  #neck { left: 258px; top: 78px; background-image: url(assets/neck.png); }
 
-  .stretch #sitting { opacity: 0; transform: scale(.96); animation: none; pointer-events: none; }
-  .stretch #stretching {
-    opacity: 1; transform: none; pointer-events: auto;
-    animation: sway 4.2s ease-in-out .6s infinite;
-  }
-  @keyframes sway {
-    0%, 100% { transform: rotate(0) scaleY(1); }
-    20% { transform: rotate(-3deg) scaleY(1.02); }
-    50% { transform: rotate(0) scaleY(1.03); }
-    80% { transform: rotate(3deg) scaleY(1.02); }
-  }
-
-  .heart { position: absolute; right: 70px; top: 128px; width: 18px; opacity: 0; pointer-events: none; }
+  .heart { position: absolute; left: 300px; top: 118px; width: 18px; opacity: 0; pointer-events: none; }
   .happy .heart { animation: float 1.1s ease-out; }
   @keyframes float {
     0% { opacity: 0; transform: translateY(6px); }
@@ -56,7 +41,7 @@
 
   /* Globito */
   #bubble {
-    position: absolute; left: 10px; top: 30px; width: 212px;
+    position: absolute; left: 8px; top: 40px; width: 214px; box-sizing: border-box;
     padding: 16px 18px 14px; background: var(--cream); border-radius: 18px;
     box-shadow: var(--shadow);
     opacity: 0; transform: translateX(10px) scale(.96); transform-origin: 100% 30%;
@@ -64,10 +49,10 @@
     pointer-events: none;
   }
   #bubble::after {
-    content: ''; position: absolute; right: -6px; top: 40px; width: 14px; height: 14px;
+    content: ''; position: absolute; right: -6px; top: 48px; width: 14px; height: 14px;
     background: var(--cream); transform: rotate(45deg); border-radius: 2px;
   }
-  .stretch #bubble { opacity: 1; transform: none; pointer-events: auto; transition-delay: .25s; }
+  .stretch #bubble { opacity: 1; transform: none; pointer-events: auto; transition-delay: .9s; }
   #bubble h1 {
     margin: 0 0 6px; font-family: 'Fraunces', Georgia, serif; font-weight: 600;
     font-size: 19px; line-height: 1.15; letter-spacing: -0.02em;
@@ -76,7 +61,7 @@
   .actions { display: flex; gap: 8px; }
   button {
     font: 600 12.5px/1 'DM Sans', system-ui, sans-serif; border-radius: 10px;
-    padding: 10px 12px; min-height: 36px; cursor: pointer; white-space: nowrap; border: 1px solid transparent;
+    padding: 10px 9px; min-height: 36px; cursor: pointer; white-space: nowrap; border: 1px solid transparent;
     transition: background-color .15s ease, color .15s ease, border-color .15s ease;
   }
   button:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
@@ -88,20 +73,24 @@
   .ghost:active { background: #F0CDD3; }
 
   #hint {
-    position: absolute; right: 150px; top: 160px; padding: 6px 10px; border-radius: 10px;
+    position: absolute; right: 215px; top: 150px; padding: 6px 10px; border-radius: 10px;
     background: var(--cream); box-shadow: var(--shadow); font-size: 12px; color: var(--ink-soft);
     white-space: nowrap; opacity: 0; transition: opacity .2s ease; pointer-events: none;
   }
   .hover:not(.stretch) #hint { opacity: 1; }
 
   @media (prefers-reduced-motion: reduce) {
-    #sitting, .stretch #stretching, .heart { animation: none !important; }
-    .pose, #bubble { transition-duration: .01s; }
+    .heart { animation: none !important; }
+    .sprite, #bubble { transition-duration: .01s; }
   }
 </style>
 </head>
 <body>
 <main id="scene">
+  <div class="sprite active" id="typing" role="img" aria-label="Mini Flor tipeando en su compu"></div>
+  <div class="sprite" id="stretch" role="img" aria-label="Mini Flor estirando los brazos hacia arriba"></div>
+  <div class="sprite" id="neck" role="img" aria-label="Mini Flor estirando el cuello"></div>
+
   <section id="bubble" aria-live="polite">
     <h1>Hora de estirarte</h1>
     <p id="tip"></p>
@@ -111,9 +100,6 @@
     </div>
   </section>
   <div id="hint"></div>
-
-  <img class="pose" id="sitting" src="assets/sitting.png" alt="Mini Flor tipeando en su compu" draggable="false">
-  <img class="pose" id="stretching" src="assets/stretching.png" alt="Mini Flor estirándose con los brazos arriba" draggable="false">
 
   <svg class="heart" viewBox="0 0 24 22" aria-hidden="true">
     <path d="M12 21 C4 14 0 10 3 5 C5.5 1.5 10 2.5 12 6 C14 2.5 18.5 1.5 21 5 C24 10 20 14 12 21 Z" fill="#C2536E"/>
