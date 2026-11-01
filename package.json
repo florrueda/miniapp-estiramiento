@@ -1,6 +1,6 @@
 {
   "name": "miniapp-estiramiento",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Una mini Flor que tipea en la esquina de la pantalla y cada 30 minutos te recuerda estirarte.",
   "main": "main.js",
   "scripts": {
@@ -11,10 +11,28 @@
   "build": {
     "appId": "com.flor.miniapp-estiramiento",
     "productName": "Mini Flor",
-    "files": ["main.js", "preload.js", "renderer.js", "index.html", "assets/**"],
-    "win": { "target": "nsis" },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true },
-    "mac": { "target": { "target": "dmg", "arch": "universal" }, "identity": "-", "category": "public.app-category.healthcare-fitness" }
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "index.html",
+      "assets/**"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": {
+        "target": "dmg",
+        "arch": "universal"
+      },
+      "identity": "-",
+      "category": "public.app-category.healthcare-fitness"
+    }
   },
   "devDependencies": {
     "electron": "^45.2.1",
